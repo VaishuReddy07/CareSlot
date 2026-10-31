@@ -1,40 +1,84 @@
 # CareSlot
 
-Appointment booking and practice operations for patients and practitioners.
+CareSlot is an appointment and practice management app for a small clinic. Patients can book appointments, while practitioners can review the schedule, manage availability, view patient records, and save visit notes.
 
-## Local development
+The project includes a React and TypeScript web app, a Spring Boot API, and PostgreSQL. Docker Compose runs the full app on your computer.
 
-Requirements for the full stack: Docker Desktop with Docker Compose v2.
+## Run CareSlot locally
+
+### What you need
+
+- Docker Desktop with Docker Compose v2
+- Git, if you are cloning the repository
+
+### Start the app
+
+Clone the repository, open a terminal in the project folder, then run:
 
 ```sh
-docker compose up --build
+docker compose up --build --detach --wait
 ```
 
-On Windows, you can instead run `start-careslot.bat` after Docker Desktop is ready. It starts the stack and opens the web app. Run `stop-careslot.bat` to stop the services; it keeps the PostgreSQL volume.
+On Windows, you can also double-click `start-careslot.bat` after Docker Desktop is ready. The first launch can take a few minutes while Docker downloads and builds the images.
 
-Open the web app at `http://localhost:5173`. The API health endpoint is `http://localhost:8080/actuator/health`; PostgreSQL is exposed on port `5434`. Compose binds these ports to localhost only.
+Open these addresses once the containers are ready:
 
-For the frontend dashboard alone, run `npm ci` and `npm run dev` from `frontend`, then open the URL Vite prints (usually `http://localhost:5173`). Opening `frontend/index.html` directly shows an interactive sample preview; it does not run the React app or connect to the API. Use the localhost URL for the full app.
+- **CareSlot web app:** http://localhost:5173
+- **API health:** http://localhost:8080/actuator/health
+- **PostgreSQL:** `localhost:5434`
 
-Compose starts in local demo mode (`CARESLOT_DEMO_MODE=true`): the React dashboard reads and saves sample appointments in PostgreSQL through `/api/demo/appointments`, patient lists and analytics use that database, and the schedule refreshes every 15 seconds. The demo API has no login, so keep demo mode on localhost and use only fictional data. Setting `CARESLOT_DEMO_MODE=false` disables those routes; the secured `/api/appointments` and `/api/assistant/summarize` routes then require a configured JWT issuer and role/scope claims. The AI endpoint returns an unpersisted draft; set `ANTHROPIC_API_KEY` only in the API runtime environment, and require practitioner review before using a real draft.
+The web app and API are bound to your local machine. To stop CareSlot and keep its database, run `docker compose down` or double-click `stop-careslot.bat`.
 
-## Verification status and production requirements
+To start with an empty database, run `docker compose down --volumes` before starting again. This deletes the local CareSlot database and its saved records.
 
-This repository currently provides a local demo and an API foundation. It is not a production healthcare service and must not store real patient information. The local demo API is intentionally unauthenticated and is suitable only for fictional data on a trusted development machine.
+## What you can try
 
-Run `mvn verify` in `backend` to run the unit tests and PostgreSQL concurrency test. The concurrency test uses Testcontainers and requires Docker. Run `npm ci && npm run build` in `frontend` for the TypeScript and production bundle check. CI runs these checks and builds the Compose images.
+CareSlot starts in demo mode with fictional sample data. You can explore appointments, patients, clinical notes, practitioner availability, and analytics. Changes made through the demo API are saved to the local PostgreSQL database. The dashboard refreshes schedule data periodically.
 
-For the local end-to-end smoke check, start the Compose stack and run `node scripts/e2e-smoke.mjs` from the repository root. It checks health, the web response, appointment and patient reads, availability save, analytics, clinical-note save/readback, and 25 simultaneous bookings for the same slot. It creates synthetic records; remove the local database volume with `docker compose down --volumes` when you want a completely fresh demo database.
+The demo API does not require a login. Keep it on your own computer and use fictional information only. Do not enter real patient data.
 
-Demo seed data is removed by the next Flyway migration and is restored only when `CARESLOT_DEMO_MODE=true`. Production mode denies API access when no JWT issuer is configured. This is a fail-closed starting point, not a complete production deployment: production still needs organization and practitioner provisioning, verified identity-provider claim mapping and role tests, fully authenticated frontend flows, operational monitoring and backups, secrets and key rotation, TLS, incident response, data-retention and deletion workflows, and privacy/security review for the jurisdictions where it will operate. The AI endpoint returns an unpersisted draft and requires practitioner review; it is not medical advice.
-
-## Architecture
-
-- `frontend`: responsive React + TypeScript app.
-- `backend`: Spring Boot API, PostgreSQL persistence and Flyway migration.
-- Appointment overlap is rejected at the database layer using a PostgreSQL exclusion constraint; service transactions provide a clear conflict response under concurrent requests.
-- `docker-compose.yml`: local web, API and database services.
+The AI assistant can prepare a visit-note draft when an Anthropic API key is configured for the API container. Drafts need practitioner review before use; they are not medical advice.
 
 ## Configuration
 
-Copy `.env.example` to `.env` and set strong local-only values. Never commit secrets. For deployment, provide secrets through the platform secret manager, not image build arguments.
+Docker Compose has local defaults, so you can start the project without creating an environment file. To change them, copy `.env.example` to `.env` and edit the values before starting the containers. For example, set `ANTHROPIC_API_KEY` to enable the AI integration.
+
+Keep API keys and passwords private. Do not commit real credentials or place them in frontend code. For a deployed service, provide secrets through your hosting platform's secret manager.
+
+## Run checks
+
+Build and test the API:
+
+```sh
+cd backend
+mvn -B verify
+```
+
+Build the web app:
+
+```sh
+cd frontend
+npm ci
+npm run build
+```
+
+For a full-stack check, start the Docker Compose services, then run this from the project root:
+
+```sh
+node scripts/e2e-smoke.mjs
+```
+
+The smoke check covers API health, the web app, appointment and patient reads, availability updates, analytics, clinical-note save and readback, and 25 simultaneous booking requests for the same time slot. It uses synthetic data. GitHub Actions runs these checks and builds the Docker images on pushes and pull requests to `main`.
+
+## Project layout
+
+- `frontend/` — React and TypeScript web app
+- `backend/` — Spring Boot API and database migrations
+- `scripts/e2e-smoke.mjs` — full-stack smoke check
+- `docker-compose.yml` — local web, API, and PostgreSQL services
+
+## About production use
+
+CareSlot is a development demo and API foundation. It has not been reviewed or validated for use as a production healthcare service. Demo mode is unauthenticated and is intended only for fictional data on a trusted local machine.
+
+Before using real patient information, the service needs a complete security and privacy review, a tested identity-provider setup, authenticated user flows, appropriate access controls, secure deployment and backups, monitoring, incident response, and data-retention and deletion processes. Requirements depend on where and how the service will operate.
