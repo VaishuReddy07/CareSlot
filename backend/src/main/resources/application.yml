@@ -1,0 +1,28 @@
+server:
+  port: 8080
+  shutdown: graceful
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/careslot}
+    username: ${SPRING_DATASOURCE_USERNAME:careslot}
+    password: ${SPRING_DATASOURCE_PASSWORD:change-me-locally}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+careslot:
+  demo-mode: ${CARESLOT_DEMO_MODE:false}
+  jwt-issuer-uri: ${JWT_ISSUER_URI:}
+  anthropic-api-key: ${ANTHROPIC_API_KEY:}
+  anthropic-model: ${ANTHROPIC_MODEL:claude-3-5-sonnet-latest}

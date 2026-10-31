@@ -1,0 +1,18 @@
+CREATE TABLE practitioner_availability (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  practitioner_id UUID NOT NULL REFERENCES practitioners(id),
+  day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
+  starts_at TIME NOT NULL,
+  ends_at TIME NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  CHECK (ends_at > starts_at),
+  UNIQUE (practitioner_id, day_of_week, starts_at, ends_at)
+);
+
+INSERT INTO practitioner_availability (practitioner_id, day_of_week, starts_at, ends_at) VALUES
+  ('00000000-0000-0000-0000-000000000001', 1, '09:00', '12:00'), ('00000000-0000-0000-0000-000000000001', 1, '13:00', '17:00'),
+  ('00000000-0000-0000-0000-000000000001', 2, '09:00', '12:00'), ('00000000-0000-0000-0000-000000000001', 2, '13:00', '17:00'),
+  ('00000000-0000-0000-0000-000000000001', 3, '09:00', '12:00'), ('00000000-0000-0000-0000-000000000001', 3, '13:00', '17:00'),
+  ('00000000-0000-0000-0000-000000000001', 4, '09:00', '12:00'), ('00000000-0000-0000-0000-000000000001', 4, '13:00', '17:00'),
+  ('00000000-0000-0000-0000-000000000001', 5, '09:00', '12:00'), ('00000000-0000-0000-0000-000000000001', 5, '13:00', '17:00'),
+  ('00000000-0000-0000-0000-000000000001', 6, '09:00', '12:00');

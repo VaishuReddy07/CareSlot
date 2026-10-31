@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-careslot}
+      POSTGRES_USER: ${POSTGRES_USER:-careslot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+    ports: ["127.0.0.1:5434:5432"]
+    volumes: ["careslot_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-careslot}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-careslot}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+      CARESLOT_DEMO_MODE: ${CARESLOT_DEMO_MODE:-true}
+      JWT_ISSUER_URI: ${JWT_ISSUER_URI:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-3-5-sonnet-latest}
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      db: { condition: service_healthy }
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_DEMO_API: "true"
+    ports: ["127.0.0.1:5173:80"]
+    depends_on: [api]
+volumes:
+  careslot_data:

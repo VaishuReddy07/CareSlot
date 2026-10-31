@@ -1,0 +1,9 @@
+.env
+node_modules/
+dist/
+target/
+.m2-repository/
+.idea/
+.vscode/
+*.log
+*.tsbuildinfo
